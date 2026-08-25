@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matthew — DevOps Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f2ec;
+    --accent: #c84b1f;
+    --accent2: #1f5fc8;
+    --muted: #6b6b6b;
+    --rule: #d6d0c4;
+    --card: #ffffff;
+    --tag-bg: #e8e3d9;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page { margin: 0; size: A4; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Decorative top bar */
+  .top-bar {
+    height: 5px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 48px 64px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 40px;
+    padding: 52px 0 36px;
+    border-bottom: 1.5px solid var(--rule);
+    position: relative;
+  }
+
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 4rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .header-left h1 span {
+    color: var(--accent);
+  }
+
+  .title-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 16px;
+  }
+
+  .title-tag::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1.5px;
+    background: var(--accent2);
+  }
+
+  .tagline {
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 420px;
+    line-height: 1.6;
+    margin-top: 10px;
+  }
+
+  /* Contact block — top right */
+  .contact-block {
+    text-align: right;
+    padding-top: 12px;
+  }
+
+  .contact-block a,
+  .contact-block span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.73rem;
+    color: var(--muted);
+    text-decoration: none;
+    line-height: 2;
+    transition: color 0.2s;
+  }
+
+  .contact-block a:hover { color: var(--accent); }
+
+  .contact-block .contact-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .contact-block .contact-item svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  /* ── BODY LAYOUT ── */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 48px;
+    padding-top: 40px;
+  }
+
+  /* ── SECTIONS ── */
+  section { margin-bottom: 36px; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  /* ── SUMMARY ── */
+  .summary p {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: #2a2a2a;
+    font-weight: 300;
+  }
+
+  /* ── EXPERIENCE ── */
+  .job {
+    margin-bottom: 28px;
+    position: relative;
+    padding-left: 16px;
+    border-left: 2px solid var(--rule);
+    transition: border-color 0.2s;
+  }
+
+  .job:hover { border-left-color: var(--accent); }
+
+  .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+
+  .job-title {
+    font-size: 0.97rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .job-period {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .job-company {
+    font-size: 0.8rem;
+    color: var(--accent2);
+    font-weight: 500;
+    margin-bottom: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .job ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .job ul li {
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #3a3a3a;
+    font-weight: 300;
+    padding-left: 14px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+
+  .job ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.75rem;
+    top: 1px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar section { margin-bottom: 32px; }
+
+  /* Skills */
+  .skill-group { margin-bottom: 16px; }
+
+  .skill-group-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 7px;
+    letter-spacing: 0.03em;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    background: var(--tag-bg);
+    color: #3a3a3a;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--rule);
+    transition: all 0.2s;
+  }
+
+  .tag:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .tag.highlight {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* Education */
+  .edu-item { margin-bottom: 14px; }
+
+  .edu-degree {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .edu-school {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent2);
+    margin: 2px 0;
+  }
+
+  .edu-year {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Certifications */
+  .cert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .cert-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.6rem;
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .cert-name {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .cert-issuer {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Metrics strip */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+
+  .metric {
+    padding: 16px 12px;
+    text-align: center;
+    border-right: 1px solid var(--rule);
+    background: var(--card);
+  }
+
+  .metric:last-child { border-right: none; }
+
+  .metric-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  header         { animation: fadeUp 0.6s ease both; }
+  .metrics       { animation: fadeUp 0.6s 0.1s ease both; }
+  .main-col      { animation: fadeUp 0.6s 0.2s ease both; }
+  .sidebar       { animation: fadeUp 0.6s 0.3s ease both; }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    body::before { display: none; }
+    .top-bar { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .tag:hover, .job:hover { border-left-color: var(--rule); }
+    * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="title-tag">DevOps &amp; Cloud Infrastructure Engineer</div>
+      <h1>Mat<span>thew</span></h1>
+      <p class="tagline">Building resilient pipelines, scalable infrastructure, and zero-downtime deployments — bridging development and operations with precision.</p>
+    </div>
+
+    <div class="contact-block">
+      <div class="contact-item">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <a href="mailto:matteceejay@gmail.com">matteceejay@gmail.com</a>
+      </div>
+      <div class="contact-item">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        <a href="tel:9198888649">(919) 888-8649</a>
+      </div>
+      <div class="contact-item">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Boston, MA</span>
+      </div>
+      <div class="contact-item" style="margin-top:4px;">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <a href="https://linkedin.com/in/matthew" target="_blank">linkedin.com/in/matthew</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- METRICS STRIP -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-number">8+</div>
+      <div class="metric-label">Years<br>Experience</div>
+    </div>
+    <div class="metric">
+      <div class="metric-number">50+</div>
+      <div class="metric-label">Pipelines<br>Deployed</div>
+    </div>
+    <div class="metric">
+      <div class="metric-number">99.9%</div>
+      <div class="metric-label">Uptime<br>Achieved</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- MAIN COLUMN -->
+    <div class="main-col">
+
+      <!-- SUMMARY -->
+      <section class="summary">
+        <div class="section-label">Profile</div>
+        <p>Results-driven DevOps Engineer with over 8 years of experience designing and maintaining cloud-native infrastructure, CI/CD pipelines, and container orchestration platforms. Adept at collaborating cross-functionally to reduce deployment friction, improve system reliability, and accelerate time-to-market. Passionate about automation, infrastructure-as-code, and building cultures of continuous improvement.</p>
+      </section>
+
+      <!-- EXPERIENCE -->
+      <section>
+        <div class="section-label">Experience</div>
+
+        <div class="job">
+          <div class="job-header">
+            <span class="job-title">Senior DevOps Engineer</span>
+            <span class="job-period">Jan 2022 — Present</span>
+          </div>
+          <div class="job-company">// Acme Technologies · Boston, MA</div>
+          <ul>
+            <li>Architected and maintained multi-region AWS infrastructure using Terraform, reducing provisioning time by 70%.</li>
+            <li>Led migration of 30+ microservices to Kubernetes (EKS), improving deployment frequency from weekly to multiple daily releases.</li>
+            <li>Designed GitLab CI/CD pipelines with automated testing, security scanning, and canary deployments, cutting rollback incidents by 60%.</li>
+            <li>Implemented centralized observability stack (Prometheus, Grafana, ELK) achieving 99.95% uptime SLA across production environments.</li>
+          </ul>
+        </div>
+
+        <div class="job">
+          <div class="job-header">
+            <span class="job-title">DevOps / Cloud Engineer</span>
+            <span class="job-period">Mar 2019 — Dec 2021</span>
+          </div>
+          <div class="job-company">// CloudBridge Solutions · Remote</div>
+          <ul>
+            <li>Managed hybrid cloud environments across AWS and GCP for 12 enterprise clients, supporting 200+ virtual machines.</li>
+            <li>Automated infrastructure provisioning with Ansible and Terraform, eliminating manual configuration drift.</li>
+            <li>Built Docker-based build pipelines integrated with Jenkins, reducing average build times by 45%.</li>
+            <li>Introduced secrets management via HashiCorp Vault, achieving SOC 2 compliance ahead of schedule.</li>
+          </ul>
+        </div>
+
+        <div class="job">
+          <div class="job-header">
+            <span class="job-title">Systems / Infrastructure Engineer</span>
+            <span class="job-period">Jun 2016 — Feb 2019</span>
+          </div>
+          <div class="job-company">// DataCore Systems · Raleigh, NC</div>
+          <ul>
+            <li>Administered Linux (RHEL/Ubuntu) server fleets and optimized performance for high-throughput data pipelines.</li>
+            <li>Implemented network monitoring with Nagios and Zabbix, reducing mean time to detect (MTTD) by 50%.</li>
+            <li>Supported on-prem to AWS cloud migration for core application stack, maintaining zero downtime during cutover.</li>
+          </ul>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- SKILLS -->
+      <section>
+        <div class="section-label">Skills</div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Cloud Platforms</div>
+          <div class="tags">
+            <span class="tag highlight">AWS</span>
+            <span class="tag">GCP</span>
+            <span class="tag">Azure</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Infrastructure as Code</div>
+          <div class="tags">
+            <span class="tag highlight">Terraform</span>
+            <span class="tag">Ansible</span>
+            <span class="tag">Pulumi</span>
+            <span class="tag">CloudFormation</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Containers &amp; Orchestration</div>
+          <div class="tags">
+            <span class="tag highlight">Kubernetes</span>
+            <span class="tag">Docker</span>
+            <span class="tag">Helm</span>
+            <span class="tag">EKS</span>
+            <span class="tag">GKE</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">CI/CD</div>
+          <div class="tags">
+            <span class="tag">GitLab CI</span>
+            <span class="tag">GitHub Actions</span>
+            <span class="tag">Jenkins</span>
+            <span class="tag">ArgoCD</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Observability</div>
+          <div class="tags">
+            <span class="tag">Prometheus</span>
+            <span class="tag">Grafana</span>
+            <span class="tag">Datadog</span>
+            <span class="tag">ELK Stack</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Scripting &amp; Languages</div>
+          <div class="tags">
+            <span class="tag highlight">Python</span>
+            <span class="tag">Bash</span>
+            <span class="tag">Go</span>
+            <span class="tag">YAML</span>
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-name">Security &amp; Compliance</div>
+          <div class="tags">
+            <span class="tag">Vault</span>
+            <span class="tag">SAST/DAST</span>
+            <span class="tag">SOC 2</span>
+            <span class="tag">IAM</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CERTIFICATIONS -->
+      <section>
+        <div class="section-label">Certifications</div>
+
+        <div class="cert-item">
+          <div class="cert-badge">AWS</div>
+          <div>
+            <div class="cert-name">AWS Solutions Architect — Professional</div>
+            <div class="cert-issuer">Amazon Web Services · 2023</div>
+          </div>
+        </div>
+
+        <div class="cert-item">
+          <div class="cert-badge">CKA</div>
+          <div>
+            <div class="cert-name">Certified Kubernetes Administrator</div>
+            <div class="cert-issuer">CNCF · 2022</div>
+          </div>
+        </div>
+
+        <div class="cert-item">
+          <div class="cert-badge">TF</div>
+          <div>
+            <div class="cert-name">HashiCorp Terraform Associate</div>
+            <div class="cert-issuer">HashiCorp · 2021</div>
+          </div>
+        </div>
+
+        <div class="cert-item">
+          <div class="cert-badge">GCP</div>
+          <div>
+            <div class="cert-name">Professional Cloud DevOps Engineer</div>
+            <div class="cert-issuer">Google Cloud · 2021</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- EDUCATION -->
+      <section>
+        <div class="section-label">Education</div>
+
+        <div class="edu-item">
+          <div class="edu-degree">B.S. Computer Science</div>
+          <div class="edu-school">// North Carolina State University</div>
+          <div class="edu-year">2012 — 2016</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
