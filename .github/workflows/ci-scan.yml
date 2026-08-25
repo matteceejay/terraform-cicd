@@ -35,12 +35,13 @@ jobs:
         uses: sonarsource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: https://sonarcloud.io 
 
       - name: Enforce Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@v1
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
         # this step is what actually FAILS the workflow if code quality/security
-        # thresholds aren't met — the scan step above alone only uploads 
+        # thresholds aren't met — the scan step above alone only uploads results
