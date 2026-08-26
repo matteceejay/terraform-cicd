@@ -2,60 +2,48 @@ name: Build and Push
 
 on:
   workflow_run:
-    workflows: ["CI Scan"] # only fires after ci-scan.yml finishes — never runs on its own
+    workflows: ["CI Scan"]
     types: [completed]
     branches: [main]
 
 permissions:
-  id-token: write # required for OIDC — this is what lets the job request a GitHub token
+  id-token: write
   contents: read
 
 jobs:
   build-and-push:
-    if: github.event.workflow_run.conclusion == 'success' # the actual gate — skips entirely if gitleaks/SonarCloud failed
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       ECR_REPOSITORY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY_NAME }}
-      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }} # the exact commit that was scanned — not a fresh checkout of main
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
 
     steps:
       - name: Checkout the scanned commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: DEBUG — print actual OIDC token claims
-        env:
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
-        run: |
-          TOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" | jq -r '.value')
-          # decode the JWT payload (2nd segment) — this is exactly what AWS receives
-          echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | jq .
-          
-
       - name: Assume AWS build role via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-ecr-build-push
           aws-region: ${{ vars.AWS_REGION }}
-          # no access-key-id / secret-access-key anywhere — OIDC issues short-lived creds
 
       - name: Log in to ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       - name: Build image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0 # CHANGED — was @0.28.0, a tag that never existed
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
-          exit-code: "1" # fails the job — the push step below never runs if this fails
-          ignore-unfixed: true # don't block on CVEs with no available fix yet
+          exit-code: "1"
+          ignore-unfixed: true
 
       - name: Push image to ECR
         run: |
