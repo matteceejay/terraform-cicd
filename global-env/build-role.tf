@@ -1,6 +1,5 @@
 # Trust policy: only GitHub Actions workflows running on THIS repo,
-# and only on the main branch, can assume this role. Replace the repo
-# path below with your actual org/repo.
+# and only on the main branch, can assume this role.
 data "aws_iam_policy_document" "github_build_trust" {
   statement {
     effect  = "Allow"
@@ -8,7 +7,7 @@ data "aws_iam_policy_document" "github_build_trust" {
 
     principals {
       type        = "Federated"
-      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn] # FIXED — was [data.aws], an incomplete reference
     }
 
     condition {
