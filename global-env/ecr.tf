@@ -24,6 +24,7 @@ resource "aws_kms_alias" "ecr" {
 resource "aws_ecr_repository" "app" {
   name                 = "my-app"
   image_tag_mutability = "IMMUTABLE" # prevents overwriting an existing tag, e.g. "latest"
+  force_delete         = true # allows terraform destroy to succeed even if images exist
 
   image_scanning_configuration {
     scan_on_push = true # Trivy in the pipeline is your build-time gate; this is a backstop

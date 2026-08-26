@@ -3,8 +3,8 @@ variable "environment_name" {
   type        = string
 }
 
-variable "github_repo" {
-  description = "org/repo, e.g. matteceejay/terraform-cicd-pipeline"
+variable "github_repo_immutable" { # RENAMED — was "github_repo"
+  description = "Full immutable subject in owner@id/repo@id form, e.g. matteceejay@187773256/terraform-cicd@1345632264"
   type        = string
 }
 

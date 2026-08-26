@@ -9,6 +9,6 @@ task_cpu      = "256"
 task_memory   = "512"
 desired_count = 1
 
-github_repo             = "matteceejay/teracicd"
+github_repo_immutable   = "matteceejay@187773256/terraform-cicd@1345632264"
 github_environment_name = "dev"
 oidc_provider_arn       = "arn:aws:iam::911167920081:oidc-provider/token.actions.githubusercontent.com"

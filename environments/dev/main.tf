@@ -6,20 +6,20 @@ module "vpc" {
   source = "../../modules/vpc"
 
   environment_name   = "dev"
-  vpc_cidr           = var.vpc_cidr
-  single_nat_gateway = var.single_nat_gateway
+  vpc_cidr           = "10.0.0.0/16"
+  single_nat_gateway = true # fine for dev — cost over redundancy here
 }
 
 module "alb" {
   source = "../../modules/alb"
 
-  environment_name    = "dev"
-  vpc_id              = module.vpc.vpc_id
-  public_subnet_ids   = module.vpc.public_subnet_ids
-  certificate_arn     = var.certificate_arn
-  hosted_zone_name    = var.hosted_zone_name
-  subdomain_name      = var.subdomain_name
-  deletion_protection = var.deletion_protection
+  environment_name   = "dev"
+  vpc_id             = module.vpc.vpc_id
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  certificate_arn    = "arn:aws:acm:us-east-1:911167920081:certificate/21391baf-f40d-461a-9a19-6fff8a123af0"
+  hosted_zone_name   = "handart.site"
+  subdomain_name     = "teracicd-dev.handart.site"
+  deletion_protection = false # fine for dev — you'll want true for prod
 }
 
 module "task_roles" {
@@ -40,9 +40,9 @@ module "ecs_service" {
 
   image_tag = "latest-known-good" # placeholder — the pipeline updates this via ecs:UpdateService, not here
 
-  task_cpu      = var.task_cpu
-  task_memory   = var.task_memory
-  desired_count = var.desired_count
+  task_cpu      = "256"  # smallest Fargate size — dev doesn't need more
+  task_memory   = "512"
+  desired_count = 1    # single task in dev is fine, no HA requirement here
 
   task_execution_role_arn = module.task_roles.execution_role_arn
   task_role_arn           = module.task_roles.task_role_arn
@@ -52,7 +52,7 @@ module "deploy_role" {
   source = "../../modules/deploy-role"
 
   environment_name        = "dev"
-  github_repo             = var.github_repo
+  github_repo_immutable   = var.github_repo_immutable # CHANGED — was github_repo = var.github_repo
   github_environment_name = var.github_environment_name
   oidc_provider_arn       = var.oidc_provider_arn
 

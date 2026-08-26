@@ -5,6 +5,11 @@
 # after approval. So this role literally cannot be assumed until
 # someone clicks approve — the enforcement lives in AWS, not just the
 # workflow YAML.
+#
+# NOTE: uses GitHub's immutable subject claim format (repos created after
+# July 15, 2026 get this by default) — repo:OWNER@OWNER_ID/REPO@REPO_ID,
+# not the older plain repo:owner/repo format. The IDs are permanent for
+# this repo and won't change even if it's renamed later.
 data "aws_iam_policy_document" "trust" {
   statement {
     effect  = "Allow"
@@ -24,7 +29,7 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:environment:${var.github_environment_name}"]
+      values   = ["repo:${var.github_repo_immutable}:environment:${var.github_environment_name}"] # CHANGED
     }
   }
 }
