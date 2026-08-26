@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo_immutable}:environment:${var.github_environment_name}"] # CHANGED
+      values   = ["repo:${var.github_repo_immutable}:environment:${var.github_environment_name}"]
     }
   }
 }
@@ -47,18 +47,24 @@ data "aws_iam_policy_document" "permissions" {
     sid    = "ECSDeploy"
     effect = "Allow"
     actions = [
-      "ecs:DescribeServices",
-      "ecs:DescribeTaskDefinition",
+      "ecs:DescribeServices", # supports resource-level scoping — kept scoped
       "ecs:UpdateService"
     ]
     resources = [var.ecs_cluster_arn, var.ecs_service_arn]
   }
 
   statement {
+    sid    = "ECSReadTaskDef"
+    effect = "Allow"
+    actions = ["ecs:DescribeTaskDefinition"]
+    resources = ["*"] # this action doesn't support resource-level restriction in IAM
+  }
+
+  statement {
     sid    = "RegisterTaskDef"
     effect = "Allow"
-    actions = ["ecs:RegisterTaskDefinition"]
-    resources = ["*"] # this action doesn't support resource-level restriction in IAM
+    actions = ["ecs:RegisterTaskDefinition"] # RESTORED — was missing from the file entirely
+    resources = ["*"] # same limitation as DescribeTaskDefinition above
   }
 
   # Lets ECS use these two roles for the task — but ONLY these two,
