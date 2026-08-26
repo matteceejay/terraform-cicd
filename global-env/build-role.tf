@@ -19,7 +19,7 @@ data "aws_iam_policy_document" "github_build_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:matteceejay/terraform-cicd:ref:refs/heads/main"]
+      values   = ["repo:matteceejay/terraform-cicd:*"]
     }
   }
 }
