@@ -32,14 +32,19 @@ AWS account, domain, and GitHub details.
 **Two layers, applied separately:**
 
 - **`global-env/`** — applied once per AWS account. Creates the shared ECR
-  repository, looks up (or creates) the GitHub OIDC provider, and creates the
-  build role that GitHub Actions assumes to push images.
+  repository, looks up (or creates) the GitHub OIDC provider, the build role
+  GitHub Actions assumes to push images, and the **Terraform pipeline roles**
+  (`github-actions-terraform-plan-dev`, read-only + state access;
+  `github-actions-terraform-apply-dev`, write + state access, only assumable
+  from the protected `dev-infra` Environment).
 - **`environments/<env>/`** — applied once per environment (`dev`, `staging`,
   `prod`). Creates that environment's VPC, ALB, ECS cluster/service, task
   IAM roles, and its own deploy role — fully isolated Terraform state per
   environment, so a mistake in `dev` can never touch `prod`.
 
-**Pipeline flow (three GitHub Actions workflows, chained):**
+**Pipeline flow (two independent tracks):**
+
+*Application track — three workflows, chained:*
 
 ```
 push to main
@@ -56,6 +61,23 @@ deploy.yml           assume OIDC deploy role → register new task def → updat
 
 Every image is built and scanned **once**, tagged by commit SHA, then that
 same image is what gets deployed — never rebuilt per environment.
+
+*Infrastructure track — one workflow, gated:*
+
+```
+change under modules/** or environments/dev/**
+     │
+     ├─ pull request →  terraform.yml (plan job)
+     │                  fmt → init → validate → plan → plan posted as PR comment
+     │
+     └─ merge to main → terraform.yml (apply job)
+                        assume apply role via OIDC → apply the saved plan
+                        (pauses for approval on the "dev-infra" Environment)
+```
+
+The infrastructure track runs on its own — triggered by file paths, not
+chained off the app workflows. App-only changes (`Dockerfile`, `index.html`)
+never trigger it.
 
 ---
 
@@ -90,13 +112,14 @@ Before you start, have these ready:
 │   └── workflows/
 │       ├── ci-scan.yml            # gitleaks + SonarCloud, runs on every push to main
 │       ├── build-and-push.yml     # build image → Trivy scan → push to ECR
-│       └── deploy.yml             # deploy to ECS (dev job now; staging/prod added the same way)
+│       ├── deploy.yml             # deploy to ECS (dev job now; staging/prod added the same way)
+│       └── terraform.yml          # plan on PR / apply on merge, when modules/ or environments/dev/ change
 │
 ├── global-env/                    # applied ONCE per AWS account
 │   ├── ecr.tf                     # shared ECR repository + KMS key + lifecycle policy
 │   ├── oidc-provider.tf           # looks up the GitHub OIDC provider (does not create it)
 │   ├── build-role.tf              # IAM role GitHub Actions assumes to build & push images
-│   └── backend.tf
+│   └── terraform-pipeline-role.tf # plan + apply roles for the Terraform CI/CD workflow
 │
 ├── modules/                       # reusable, no state of their own
 │   ├── vpc/                       # VPC, public/private subnets, IGW, NAT gateway(s)
@@ -168,6 +191,14 @@ there's no image in ECR yet, so this is normal, not a failure.
 Note the `deploy_role_arn` output — you'll need it for a GitHub repo
 variable in the next step.
 
+### 3b. (One-time) the pipeline manages dev from here on
+
+After this first local `terraform apply` in `environments/dev/`, further
+changes to `modules/**` or `environments/dev/**` go through `terraform.yml`:
+open a PR, review the plan comment, merge, approve the `dev-infra`
+deployment. `global-env/` is still applied by hand — it holds the pipeline's
+own permissions, so it can't manage itself.
+
 ### 4. Configure GitHub repository variables
 
 Go to your repo → **Settings → Secrets and variables → Actions → Variables
@@ -179,6 +210,8 @@ tab** and add:
 | `AWS_REGION` | e.g. `us-east-1` | wherever you're deploying |
 | `ECR_REPOSITORY_NAME` | the name set in `global-env/ecr.tf` | e.g. `my-app` |
 | `DEV_DEPLOY_ROLE_ARN` | the `deploy_role_arn` output from step 3 | `terraform output deploy_role_arn` in `environments/dev` |
+| `DEV_TF_PLAN_ROLE_ARN` | the plan role ARN | `terraform output tf_plan_role_arn` in `global-env` |
+| `DEV_TF_APPLY_ROLE_ARN` | the apply role ARN | `terraform output tf_apply_role_arn` in `global-env` |
 
 These are **variables**, not secrets — none of this is sensitive, it's all
 identifiers.
@@ -200,6 +233,16 @@ No protection rules needed for dev — this exists purely so the deploy
 role's trust policy (which checks for a GitHub Environment claim in the
 OIDC token) has something to match against. You'll add `staging` and
 `prod` the same way later, with required reviewers on `prod`.
+
+### 6b. Create a GitHub Environment named `dev-infra`
+
+Same place, name it exactly `dev-infra`. This is the gate for `terraform
+apply` in the infrastructure track. Add yourself as a **required reviewer** —
+the apply role's trust policy only accepts an OIDC token carrying
+`:environment:dev-infra`, and GitHub only issues that token after approval,
+so the gate is AWS-enforced, not just workflow convention. The name must
+match exactly in three places: `terraform.yml` (`environment: dev-infra`),
+the apply role's trust policy in `terraform-pipeline-role.tf`, and here.
 
 ### 7. Set up SonarCloud
 
@@ -241,6 +284,8 @@ should be live at whatever subdomain you configured.
 | `environments/dev/terraform.tfvars` | `oidc_provider_arn` | `arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com` |
 | `.github/workflows/build-and-push.yml` | `role-to-assume` ARN | uses `${{ vars.AWS_ACCOUNT_ID }}` — just needs the variable set, no file edit |
 | `.github/workflows/deploy.yml` | `role-to-assume` ARN | uses `${{ vars.DEV_DEPLOY_ROLE_ARN }}` — same, no file edit needed once the variable exists |
+| `.github/workflows/terraform.yml` | `TF_VERSION` | match your local `terraform version` (the CLI that last wrote state) |
+| `global-env/terraform-pipeline-role.tf` | `gh_repo_sub` (immutable format), `tf_state_key` | `tf_state_key` must match the `key` prefix in `environments/dev/backend.tf` |
 | `sonar-project.properties` | `sonar.organization`, `sonar.projectKey` | from your SonarCloud project settings |
 | `Dockerfile` / `index.html` | replace with your actual app | — |
 
@@ -313,6 +358,17 @@ swaps in the new image tag, registers a new revision, and updates the
 service — waiting for the new task to actually pass health checks before
 reporting success.
 
+**`terraform.yml`** — triggers on pull requests and pushes to `main` that
+touch `modules/**` or `environments/dev/**` (app-only changes don't trigger
+it). On a PR it runs `fmt -check` → `init` → `validate` → `plan -out=tfplan`
+using the read-only **plan role**, uploads the plan as an artifact, and posts
+it as a PR comment. On merge to `main` the `apply` job downloads that exact
+saved plan and runs `terraform apply tfplan` using the **apply role**, after
+the `dev-infra` Environment approval. Applying the saved plan (not a fresh
+one) means what gets applied is exactly what was reviewed; if `main` moved in
+between, Terraform rejects the stale plan and you re-run. A `concurrency`
+group serialises runs so two applies can't race on the same state.
+
 ---
 
 ## Security decisions, explained
@@ -333,6 +389,14 @@ reporting success.
 - **Every third-party GitHub Action is pinned to a full commit SHA**, not a
   mutable version tag — a tag can be moved by the action's maintainer (or
   an attacker who compromises their account); a SHA cannot.
+- **The Terraform pipeline uses split plan/apply roles.** The `plan` job
+  (which runs on every PR, including from branches) gets a read-only role
+  with state access only. The `apply` job gets the write role, and that role
+  is only assumable with a `dev-infra` Environment OIDC claim — so a PR can
+  never apply, and an apply can never run unapproved.
+- **`apply` runs the plan that was reviewed, not a fresh one.** The `plan`
+  job's `tfplan` artifact is what `apply` consumes; a plan built against
+  older state is rejected as stale rather than silently re-planned.
 
 ---
 
@@ -353,6 +417,13 @@ reporting success.
 6. Add corresponding jobs to `deploy.yml`, matching the shape of
    `deploy-dev` but with `environment: staging` / `environment: prod` and
    the matching variables.
+7. Wire the environment into the infrastructure track: add
+   `environments/staging/**` (etc.) to the `paths:` filter in
+   `terraform.yml`, duplicate the `plan`/`apply` jobs with that working
+   directory, add `STAGING_TF_PLAN_ROLE_ARN` / `STAGING_TF_APPLY_ROLE_ARN`
+   variables, add plan/apply roles in `terraform-pipeline-role.tf` scoped to
+   that environment's state key, and create a `staging-infra` /
+   `prod-infra` Environment (required reviewers on `prod-infra`).
 
 No module changes are needed — `vpc`, `alb`, `ecs-service`,
 `ecs-task-roles`, and `deploy-role` were all built to be called this way
@@ -392,6 +463,28 @@ from the start.
   workflows from `.github/workflows/` at the **true repo root**. A file
   nested under any other folder (e.g. `modules/.github/workflows/`) is
   invisible to Actions.
+- **`terraform.yml`: `Unable to resolve action <action>@<sha>` at "Prepare
+  all required actions"** — the pinned commit SHA doesn't exist on that
+  action's repo (a guessed or mistyped pin). Look up the real SHA for the tag
+  you want at
+  `https://api.github.com/repos/<owner>/<action>/git/ref/tags/<tag>` (or the
+  releases page) and pin that.
+- **`terraform.yml`: `Error acquiring the state lock ... s3:PutObject on
+  ...terraform.tfstate.tflock ... no identity-based policy allows`** — the
+  Terraform role's state-access policy `Resource` prefix doesn't match the
+  `key` in `environments/dev/backend.tf`. The key prefix here is
+  `teracicd/dev/` (not `terraform-cicd/dev/`); the policy must grant
+  `s3:GetObject` / `PutObject` / `DeleteObject` on
+  `arn:aws:s3:::<bucket>/teracicd/dev/*` so the `.tflock` object is covered.
+- **`terraform.yml`: `state snapshot was created by Terraform vX.Y.Z; you
+  must use vX.Y.Z or greater`** — `TF_VERSION` in the workflow is older than
+  the CLI that last wrote the state. Set it to match your local
+  `terraform version`.
+- **`terraform.yml` fails immediately at "Format check"** — `terraform fmt
+  -check -recursive` is non-zero because `.tf` files aren't canonically
+  formatted. Run `terraform fmt -recursive` once and commit, or make the step
+  advisory (`terraform fmt -check -recursive || echo "::warning::not
+  fmt-canonical"`).
 
 ---
 
