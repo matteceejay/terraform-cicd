@@ -43,6 +43,7 @@ resource "aws_lb" "this" {
   security_groups            = [aws_security_group.alb.id]
   enable_deletion_protection = var.deletion_protection
   drop_invalid_header_fields = true # mitigates request smuggling via malformed headers
+  idle_timeout               = 120   # seconds before the ALB closes an idle connection to a client
 }
 
 # target_type = "ip" because the service runs on Fargate (awsvpc mode) —
