@@ -6,7 +6,7 @@ locals {
   # immutable subject prefix for this repo — same value as build-role.tf
   gh_repo_sub     = "repo:matteceejay@187773256/terraform-cicd@1345632264"
   tf_state_bucket = "terraform-cicd-setup"
-  tf_state_key    = "terraform-cicd/dev/*" # matches environments/dev/backend.tf + its .tflock
+  tf_state_key    = "teracicd/dev/*" # matches environments/dev/backend.tf key prefix — NOT "terraform-cicd"
 }
 
 ########################################
