@@ -4,7 +4,7 @@ variable "public_subnet_ids" { type = list(string) }
 variable "certificate_arn"   { type = string } # ACM cert — HTTPS only, no plain HTTP to the app
 variable "container_port" {
     type    = number
-    default = 8080
+    default = 8085
 }
 
 variable "health_check_path" {
