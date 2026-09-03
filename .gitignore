@@ -1,0 +1,12 @@
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+
+# per-deployment values — never commit; commit the *.tfvars.example template instead
+*.tfvars
+!*.tfvars.example
+
+# optional partial-backend config (see environments/*/backend.tf)
+backend.hcl

@@ -1,0 +1,15 @@
+vpc_cidr           = "10.0.0.0/16"
+single_nat_gateway = true
+
+certificate_arn  = "arn:aws:acm:us-east-1:000000000000:certificate/00000000-0000-0000-0000-000000000000"
+hosted_zone_name = "example.com"
+subdomain_name   = "app-dev.example.com"
+
+task_cpu      = "256"
+task_memory   = "512"
+desired_count = 1
+
+# see README → "About the GitHub OIDC immutable subject claim" for the format
+github_repo_immutable   = "OWNER@OWNER_ID/REPO@REPO_ID"
+github_environment_name = "dev"
+oidc_provider_arn       = "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"

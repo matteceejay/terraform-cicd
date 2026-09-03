@@ -1,0 +1,3 @@
+# see README → "About the GitHub OIDC immutable subject claim" for the format
+github_repo_immutable = "OWNER@OWNER_ID/REPO@REPO_ID"
+tf_state_bucket       = "your-terraform-state-bucket"
